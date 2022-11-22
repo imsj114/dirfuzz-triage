@@ -1,5 +1,5 @@
 import sys, os, re
-from benchmark import check_targeted_crash
+from benchmark import check_targeted_crash, check_targeted_crash_patched
 
 REPLAY_LOG_ORIG_FILE = "replay_log_orig.txt"
 FUZZ_LOG_FILE = "fuzzer_stats"
@@ -21,11 +21,8 @@ def get_crash_location(buf):
     line = buf[start_idx:end_idx]
     return line.split()[-1]
 
-def parse_result(targ, targ_dir):
-    log_file = os.path.join(targ_dir, REPLAY_LOG_FILE)
-    f = open(log_file, "r", encoding="latin-1")
-    buf = f.read()
-    f.close()
+def split_replay(buf):
+    replays = []
     while REPLAY_ITEM_SIG in buf:
         # Proceed to the next item.
         start_idx = buf.find(REPLAY_ITEM_SIG)
@@ -40,62 +37,31 @@ def parse_result(targ, targ_dir):
         if ADDITIONAL_INFO_SIG in replay_buf:
             remove_idx = buf.find(ADDITIONAL_INFO_SIG)
             replay_buf = replay_buf[:remove_idx]
-        if check_targeted_crash(targ, replay_buf):
-            found_time = int(replay_buf.split(FOUND_TIME_SIG)[1].split()[0])
-            return found_time
-    # If not found, return a high value to indicate timeout. When computing the
-    # median value, should confirm that such timeouts are not more than a half.
-    return None
+        replays.append(replay_buf)
+    return replays
 
 def triage(benchmark, targ, outdir):
-    # 1. Triage with ASAN log (original)
-    with_asan = []
-    replays = []
-    log_file = os.path.join(outdir, REPLAY_LOG_ORIG_FILE)
-    f = open(log_file, "r", encoding="latin-1")
+    targ_full = benchmark + '-' + targ
+    # 1. Split replay_orig
+    log_orig = os.path.join(outdir, REPLAY_LOG_ORIG_FILE)
+    f = open(log_orig, "r", encoding="latin-1")
     buf = f.read()
     f.close()
-    while REPLAY_ITEM_SIG in buf:
-        # Proceed to the next item.
-        start_idx = buf.find(REPLAY_ITEM_SIG)
-        buf = buf[start_idx + len(REPLAY_ITEM_SIG):]
-        # Identify the end of this replay.
-        if REPLAY_ITEM_SIG in buf:
-            end_idx = buf.find(REPLAY_ITEM_SIG)
-        else: # In case this is the last replay item.
-            end_idx = len(buf)
-        replay_buf = buf[:end_idx]
-        # If there is trailing allocsite information, remove it.
-        if ADDITIONAL_INFO_SIG in replay_buf:
-            remove_idx = buf.find(ADDITIONAL_INFO_SIG)
-            replay_buf = replay_buf[:remove_idx]
-        with_asan.append(check_targeted_crash(f"{benchmark}-{targ}", replay_buf))
-        replays.append(replay_buf)
+    replay_asan = split_replay(buf)
+    with_asan = list(map(lambda x:check_targeted_crash(targ_full, x), replay_asan))
     
     # 2. Triage with patched binary (new)
-    with_patch = []
-    log_file = os.path.join(outdir, f"replay_log_patch_{targ}.txt")
-    f = open(log_file, "r", encoding="latin-1")
+    log_targ = os.path.join(outdir, f"replay_log_patch_{targ}.txt")
+    f = open(log_targ, "r", encoding="latin-1")
     buf = f.read()
     f.close()
-    i = 0
-    while REPLAY_ITEM_SIG in buf:
-        # Proceed to the next item.
-        start_idx = buf.find(REPLAY_ITEM_SIG)
-        buf = buf[start_idx + len(REPLAY_ITEM_SIG):]
-        # Identify the end of this replay.
-        if REPLAY_ITEM_SIG in buf:
-            end_idx = buf.find(REPLAY_ITEM_SIG)
-        else: # In case this is the last replay item.
-            end_idx = len(buf)
-        replay_buf = buf[:end_idx]
-        # If there is trailing allocsite information, remove it.
-        if ADDITIONAL_INFO_SIG in replay_buf:
-            remove_idx = buf.find(ADDITIONAL_INFO_SIG)
-            replay_buf = replay_buf[:remove_idx]
-        with_patch.append(not (('stack-overflow' in replays[i] and 'stack-overflow' in replay_buf) \
-            or (get_crash_location(replays[i]) == get_crash_location(replay_buf))))
-        i += 1
+    replay_targ = split_replay(buf)
+    if len(replay_asan) != len(replay_targ):
+        print("Length of replay file does not match")
+        exit(1)
+    with_patch = []
+    for i in range(len(replay_asan)):
+        with_patch.append(check_targeted_crash_patched(targ_full, replay_asan[i], replay_targ[i]))
     return with_asan, with_patch
 
 def main():
@@ -110,13 +76,13 @@ def main():
 
     for targ in TARGETS[benchmark]:
         total, tp, tn, fp, fn = 0, 0, 0, 0, 0
-        fp_list, fn_list = [], []
-        for k in range(66):
-            with_asan, with_patch = triage(benchmark, targ, "output/cxxfilt-2016-4487" + f"-iter-{k}")
-            if len(with_asan) != len(with_patch):
-                print("Number of crashes does not match")
-                print(k, targ)
-                exit(1)
+        if DEBUG:
+            fp_list, fn_list = [], []
+        outdir_list = sorted(os.listdir(outdir), key=lambda x:int(x.split('-')[-1]))
+        for result_dir in outdir_list:
+            idx = int(result_dir.split('-')[-1])
+            result_dir = os.path.join(outdir, result_dir)
+            with_asan, with_patch = triage(benchmark, targ, result_dir)
             total += len(with_asan)
             for i in range(len(with_asan)):
                 if with_asan[i] and with_patch[i]:
@@ -125,10 +91,12 @@ def main():
                     tn += 1
                 elif with_asan[i] and not with_patch[i]:
                     fp += 1
-                    fp_list.append(f"iter-{k}-{i}")
+                    if DEBUG:
+                        fp_list.append(f"iter-{idx}-{i}")
                 else:
                     fn += 1
-                    fn_list.append(f"iter-{k}-{i}")
+                    if DEBUG:
+                        fn_list.append(f"iter-{idx}-{i}")
         # Print result
         print(f"{benchmark}-{targ}: total={total}, tp={tp}, tn={tn}, fp={fp}, fn={fn}")
         if DEBUG:
