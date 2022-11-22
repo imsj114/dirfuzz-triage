@@ -1,0 +1,142 @@
+diff -ruN benchmark/libming-4.7/util/old/listswf.c benchmark/libming-4.7-patched/libming-4.7-patch-2016-9831/util/old/listswf.c
+--- benchmark/libming-4.7/util/old/listswf.c	2022-11-17 00:49:33.787465480 +0900
++++ benchmark/libming-4.7-patched/libming-4.7-patch-2016-9831/util/old/listswf.c	2022-10-31 00:03:27.574694669 +0900
+@@ -1649,6 +1649,11 @@
+     flags += fgetc(f) << 16;
+     flags += fgetc(f) << 8;
+     flags += fgetc(f);
++    if (feof(f))
++    {
++      fprintf(stderr, "truncated file\n");
++      exit(-1);
++    }
+ 
+     fileOffset += 4;
+ 
+diff -ruN benchmark/libming-4.7/util/old/read.c benchmark/libming-4.7-patched/libming-4.7-patch-2016-9831/util/old/read.c
+--- benchmark/libming-4.7/util/old/read.c	2022-11-17 00:49:33.787465480 +0900
++++ benchmark/libming-4.7-patched/libming-4.7-patch-2016-9831/util/old/read.c	2022-10-31 00:03:27.574694669 +0900
+@@ -64,6 +64,7 @@
+ int readBits(FILE *f, int number)
+ {
+   int ret = buffer;
++  int tmp_char;
+ 
+   if(number == bufbits)
+   {
+@@ -79,13 +80,29 @@
+     while(number>8)
+     {
+       ret <<= 8;
+-      ret += fgetc(f);
++      tmp_char = fgetc(f);
++      if (tmp_char == EOF)
++      {
++        // exit here instead of crashing elswhere
++        fprintf(stderr, "truncated file\n");
++        exit(-1);
++      }
++
++      ret += tmp_char;
+       ++fileOffset;
+       number -= 8;
+     }
+ 
+     ++fileOffset;
+-    buffer = fgetc(f);
++    tmp_char = fgetc(f);
++    if (tmp_char == EOF)
++    {
++      // exit here instead of crashing elswhere
++      fprintf(stderr, "truncated file\n");
++      exit(-1);
++    }
++
++    buffer = tmp_char;
+ 
+     if(number>0)
+     {
+@@ -117,9 +134,18 @@
+ 
+ int readUInt8(FILE *f)
+ {
++  int tmp_char = fgetc(f);
++  // the rest of the code does not handle errors and use EOF as a valid unsigned char value
++  if (tmp_char == EOF)
++  {
++    // exit here instead of crashing elswhere
++    fprintf(stderr, "truncated file\n");
++    exit(-1);
++  }
++
+   bufbits = 0;
+   ++fileOffset;
+-  return fgetc(f);
++  return tmp_char;
+ }
+ 
+ int readSInt8(FILE *f)
+diff -ruN benchmark/libming-4.7/util/read.c benchmark/libming-4.7-patched/libming-4.7-patch-2016-9831/util/read.c
+--- benchmark/libming-4.7/util/read.c	2022-11-17 00:49:33.787465480 +0900
++++ benchmark/libming-4.7-patched/libming-4.7-patch-2016-9831/util/read.c	2022-10-31 00:03:27.574694669 +0900
+@@ -44,6 +44,7 @@
+ int readBits(FILE *f, int number)
+ {
+   int ret = buffer;
++  int tmp_char;
+ 
+   if(number == bufbits)
+   {
+@@ -58,14 +59,30 @@
+ 
+     while(number>8)
+     {
++      tmp_char = fgetc(f);
++      if (tmp_char == EOF)
++      {
++        // exit here instead of crashing elswhere
++        fprintf(stderr, "truncated file\n");
++        exit(-1);
++      }
++
+       ret <<= 8;
+-      ret += fgetc(f);
++      ret += tmp_char;
+       ++fileOffset;
+       number -= 8;
+     }
+ 
+     ++fileOffset;
+-    buffer = fgetc(f);
++    tmp_char = fgetc(f);
++    if (tmp_char == EOF)
++    {
++      // exit here instead of crashing elswhere
++      fprintf(stderr, "truncated file\n");
++      exit(-1);
++    }
++
++    buffer = tmp_char;
+ 
+     if(number>0)
+     {
+@@ -109,9 +126,18 @@
+ 
+ int readUInt8(FILE *f)
+ {
++  int tmp_char = fgetc(f);
++  // the rest of the code does not handle errors and use EOF as a valid unsigned char value
++  if (tmp_char == EOF)
++  {
++    // exit here instead of crashing elswhere
++    fprintf(stderr, "truncated file\n");
++    exit(-1);
++  }
++
+   bufbits = 0;
+   ++fileOffset;
+-  return fgetc(f);
++  return tmp_char;
+ }
+ 
+ int readSInt8(FILE *f)

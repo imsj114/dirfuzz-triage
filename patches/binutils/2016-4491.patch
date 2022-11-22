@@ -1,0 +1,28 @@
+diff -ruN benchmark/binutils-2.26/libiberty/cp-demangle.c benchmark/binutils-2.26-patched/binutils-2.26-patch-2016-4491/libiberty/cp-demangle.c
+--- benchmark/binutils-2.26/libiberty/cp-demangle.c	2015-11-13 17:27:42.000000000 +0900
++++ benchmark/binutils-2.26-patched/binutils-2.26-patch-2016-4491/libiberty/cp-demangle.c	2022-10-27 00:19:18.062728567 +0900
+@@ -5387,6 +5387,24 @@
+ {
+   struct d_component_stack self;
+ 
++  self.parent = dpi->component_stack;
++
++  while (self.parent)
++    {
++      self.dc = self.parent->dc;
++      self.parent = self.parent->parent;
++      if (dc != NULL && self.dc == dc)
++        {
++          while (self.parent)
++            {
++              self.dc = self.parent->dc;
++              self.parent = self.parent->parent;
++              if (self.dc == dc)
++                return;
++            }
++        }
++    }
++
+   self.dc = dc;
+   self.parent = dpi->component_stack;
+   dpi->component_stack = &self;

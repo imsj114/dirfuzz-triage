@@ -1,0 +1,5 @@
+*.pyc
+benchmark/
+output*/
+crashes*/
+.vscode
