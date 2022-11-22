@@ -14,8 +14,11 @@ def spawn_container(crash_dir):
             % (crash_dir, CONTAINER_NAME, IMAGE_NAME)
     run_cmd(cmd)
     
-def run_triage(benchmark):
-    targets, cmdline, src = BENCHMARK[benchmark]
+def run_triage(benchmark, targets):
+    if targets == 'all':
+        targets, cmdline, src = BENCHMARK[benchmark]
+    else:
+        _, cmdline, src = BENCHMARK[benchmark]
     cmd = "/tool-script/replay_patched.sh %s \"%s\" \"%s\" %s" % (benchmark, targets, cmdline, src)
     run_cmd_in_docker(CONTAINER_NAME, cmd, True)
 
@@ -31,8 +34,8 @@ def wait_finish():
             print("Finished")
             break
 
-def store_replay(name):
-    cmd = "docker cp %s:/output output/%s" % (CONTAINER_NAME, name)
+def store_replay(outdir):
+    cmd = "docker cp %s:/output %s" % (CONTAINER_NAME, outdir)
     run_cmd(cmd)
 
 def cleanup_container():
@@ -40,24 +43,27 @@ def cleanup_container():
     run_cmd(cmd)
 
 def main():
-    if len(sys.argv) != 3:
-        print("Usage: %s <benchmark> <outdir>" % sys.argv[0])
+    if len(sys.argv) not in [5, 6]:
+        print("Usage: %s <benchmark> <targets> <result_dir> <outdir> (iter)" % sys.argv[0])
         exit(1)
     benchmark = sys.argv[1]
-    outdir = os.path.abspath(sys.argv[2])
+    targets = sys.argv[2]
+    result_dir = os.path.abspath(sys.argv[3])
+    outdir = sys.argv[4]
+    if len(sys.argv) == 6:
+        iter = int(sys.argv[5])
 
-    dirs = sorted(os.listdir(outdir), key=lambda x:int(x.split('-')[-1]))
-    for d in dirs[66:]:
-        crash_dir = os.path.join(outdir, d, 'crashes')
+    dirs = sorted(os.listdir(result_dir), key=lambda x:int(x.split('-')[-1]))
+    for d in dirs[:iter]:
+        crash_dir = os.path.join(result_dir, d, 'crashes')
         # Run in docker
         spawn_container(crash_dir)
-        run_triage(benchmark)
+        run_triage(benchmark, targets)
         wait_finish()
-        store_replay(d)
+        store_replay(os.path.join(outdir, d))
         cleanup_container()
         # Save replay_
-        run_cmd("cp %s output/%s/replay_log_orig.txt" % (os.path.join(outdir, d, "replay_log.txt"), d))
-
+        run_cmd("cp %s %s/replay_log_orig.txt" % (os.path.join(result_dir, d, "replay_log.txt"), os.path.join(outdir, d)))
 
 if __name__ == "__main__":
     main()
