@@ -1,5 +1,5 @@
 diff -ruN benchmark/libming-4.7/util/parser.c benchmark/libming-4.7-patched/libming-4.7-patch-2017-9988/util/parser.c
---- benchmark/libming-4.7/util/parser.c	2022-11-17 00:49:33.787465480 +0900
+--- benchmark/libming-4.7/util/parser.c	2022-11-22 17:20:19.753006800 +0900
 +++ benchmark/libming-4.7-patched/libming-4.7-patch-2017-9988/util/parser.c	2022-10-31 00:27:21.570948972 +0900
 @@ -2991,6 +2991,10 @@
    int i;

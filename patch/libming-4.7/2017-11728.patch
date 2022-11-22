@@ -1,5 +1,5 @@
-diff -ruN benchmark/libming-4.7-patched/libming-4.7-patch-2017-11729/util/decompile.c benchmark/libming-4.7-patched/libming-4.7-patch-2017-11728/util/decompile.c
---- benchmark/libming-4.7-patched/libming-4.7-patch-2017-11729/util/decompile.c	2022-10-30 23:06:50.760495300 +0900
+diff -ruN benchmark/libming-4.7/util/decompile.c benchmark/libming-4.7-patched/libming-4.7-patch-2017-11728/util/decompile.c
+--- benchmark/libming-4.7/util/decompile.c	2022-11-22 17:20:19.749006812 +0900
 +++ benchmark/libming-4.7-patched/libming-4.7-patch-2017-11728/util/decompile.c	2022-11-05 15:03:05.972141865 +0900
 @@ -864,7 +864,13 @@
  		SWF_warn("OpCode: want %i, max %i\n", n, maxn);

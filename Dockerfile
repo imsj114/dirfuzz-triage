@@ -1,14 +1,14 @@
-FROM directed-benchmark-final:resume_with_asan
+FROM directed-benchmark-final:support-asan
 
 WORKDIR /benchmark
 
-COPY benchmark/binutils-2.26-patched /benchmark/project/binutils-2.26-patched
-COPY benchmark/libming-4.7-patched /benchmark/project/libming-4.7-patched
-
-# Build patched benchmarks
-RUN mkdir /benchmark/bin/patched
+# Build patched binutils-2.26
+RUN mkdir /benchmark/patch
+COPY patch/binutils-2.26 /benchmark/patch/binutils-2.26
 COPY docker-setup/build_binutils.sh /benchmark
 RUN ./build_binutils.sh
+# Build patched libming-4.7
+COPY patch/binutils-2.26 /benchmark/patch/binutils-2.26
 COPY docker-setup/build_libming.sh /benchmark
 RUN ./build_libming.sh
 

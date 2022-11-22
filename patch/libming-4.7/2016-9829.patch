@@ -1,5 +1,5 @@
 diff -ruN benchmark/libming-4.7/util/parser.c benchmark/libming-4.7-patched/libming-4.7-patch-2016-9829/util/parser.c
---- benchmark/libming-4.7/util/parser.c	2022-11-17 00:49:33.787465480 +0900
+--- benchmark/libming-4.7/util/parser.c	2022-11-22 17:20:19.753006800 +0900
 +++ benchmark/libming-4.7-patched/libming-4.7-patch-2016-9829/util/parser.c	2022-10-30 23:58:02.363364232 +0900
 @@ -18,9 +18,11 @@
   *
@@ -582,7 +582,7 @@ diff -ruN benchmark/libming-4.7/util/parser.c benchmark/libming-4.7-patched/libm
    for(i = 0; i < parserrec->FrameLabelCount; i++)
    {
 diff -ruN benchmark/libming-4.7/util/swftypes.h benchmark/libming-4.7-patched/libming-4.7-patch-2016-9829/util/swftypes.h
---- benchmark/libming-4.7/util/swftypes.h	2022-11-17 00:49:33.787465480 +0900
+--- benchmark/libming-4.7/util/swftypes.h	2022-11-22 17:20:19.753006800 +0900
 +++ benchmark/libming-4.7-patched/libming-4.7-patch-2016-9829/util/swftypes.h	2022-10-30 23:58:02.363364232 +0900
 @@ -1135,7 +1135,7 @@
  struct SWF_DEFINEFONT
