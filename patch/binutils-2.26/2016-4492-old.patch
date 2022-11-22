@@ -1,6 +1,16 @@
 diff -ruN benchmark/binutils-2.26/libiberty/cplus-dem.c benchmark/binutils-2.26-patched/binutils-2.26-patch-2016-4492/libiberty/cplus-dem.c
 --- benchmark/binutils-2.26/libiberty/cplus-dem.c	2014-10-14 16:32:04.000000000 +0900
 +++ benchmark/binutils-2.26-patched/binutils-2.26-patch-2016-4492/libiberty/cplus-dem.c	2022-10-27 00:28:51.280847599 +0900
+@@ -2042,7 +2042,8 @@
+       else
+ 	{
+ 	  int symbol_len  = consume_count (mangled);
+-	  if (symbol_len == -1)
++	  if (symbol_len == -1
++        || symbol_len > (long) strlen (*mangled))
+ 	    return -1;
+ 	  if (symbol_len == 0)
+ 	    string_appendn (s, "0", 1);
 @@ -3597,7 +3598,7 @@
  	/* A back reference to a previously seen type */
  	case 'T':
@@ -19,3 +29,13 @@ diff -ruN benchmark/binutils-2.26/libiberty/cplus-dem.c benchmark/binutils-2.26-
  	success = 0;
        else
  	string_append (result, work->btypevec[n]);
+@@ -4116,7 +4117,8 @@
+ 
+   literal_len = consume_count (mangled);
+ 
+-  if (literal_len <= 0)
++  if (literal_len <= 0
++      || literal_len > (long) strlen (*mangled))
+     return 0;
+ 
+   /* Literal parameters are names of arrays, functions, etc.  and the
