@@ -1,2 +1,2 @@
 #!/bin/bash
-docker build -t benchmark-patched -f Dockerfile .
+docker build -t dirfuzz-triage -f Dockerfile .
