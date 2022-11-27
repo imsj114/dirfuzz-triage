@@ -1,8 +1,8 @@
 import sys, os, time, csv
 from common import run_cmd, run_cmd_in_docker, check_cpu_count, fetch_works
 
-IMAGE_NAME = "benchmark-patched"
-CONTAINER_NAME = "test-triage"
+IMAGE_NAME = "dirfuzz-triage"
+CONTAINER_NAME = f"test-triage-{time.time()}"
 
 BENCHMARK = {
     "cxxfilt": ("2016-4487 2016-4489 2016-4490 2016-4491 2016-4492 2016-6131", "", "stdin"),
@@ -12,7 +12,8 @@ BENCHMARK = {
 def spawn_container(crash_dir):
     cmd = "docker run --tmpfs /box:exec --rm -m=4g -v%s:/crashes -it -d --name %s %s" \
             % (crash_dir, CONTAINER_NAME, IMAGE_NAME)
-    run_cmd(cmd)
+    while run_cmd(cmd) == b'':
+        time.sleep(1)
     
 def run_triage(benchmark, targets):
     if targets == 'all':
@@ -50,11 +51,12 @@ def main():
     targets = sys.argv[2]
     result_dir = os.path.abspath(sys.argv[3])
     outdir = sys.argv[4]
-    if len(sys.argv) == 6:
-        iter = int(sys.argv[5])
 
     dirs = sorted(os.listdir(result_dir), key=lambda x:int(x.split('-')[-1]))
-    for d in dirs[:iter]:
+    if len(sys.argv) == 6:
+        iter = int(sys.argv[5])
+        dirs = dirs[:iter]
+    for d in dirs:
         crash_dir = os.path.join(result_dir, d, 'crashes')
         # Run in docker
         spawn_container(crash_dir)

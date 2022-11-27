@@ -1,5 +1,5 @@
 import sys, os, re
-from benchmark import check_targeted_crash, check_targeted_crash_patched
+from benchmark import check_targeted_crash, check_targeted_crash_patch
 
 REPLAY_LOG_ORIG_FILE = "replay_log_orig.txt"
 FUZZ_LOG_FILE = "fuzzer_stats"
@@ -61,20 +61,25 @@ def triage(benchmark, targ, outdir):
         exit(1)
     with_patch = []
     for i in range(len(replay_asan)):
-        with_patch.append(check_targeted_crash_patched(targ_full, replay_asan[i], replay_targ[i]))
+        with_patch.append(check_targeted_crash_patch(targ_full, replay_asan[i], replay_targ[i]))
     return with_asan, with_patch
 
 def main():
-    if len(sys.argv) not in [3, 4]:
-        print("Usage: %s <benchmark> <output dir> (-d)" % sys.argv[0])
+    if len(sys.argv) not in [4, 5]:
+        print("Usage: %s <benchmark> <targets> <output dir> (-d)" % sys.argv[0])
         exit(1)
     benchmark = sys.argv[1]
-    outdir = sys.argv[2]
+    targets = sys.argv[2]
+    if targets == "all":
+        targets = TARGETS[benchmark]
+    else:
+        targets = targets.split()
+    outdir = sys.argv[3]
     DEBUG = False
-    if len(sys.argv) == 4:
-        DEBUG = sys.argv[3] == "-d"
+    if len(sys.argv) == 5:
+        DEBUG = sys.argv[4] == "-d"
 
-    for targ in TARGETS[benchmark]:
+    for targ in targets:
         total, tp, tn, fp, fn = 0, 0, 0, 0, 0
         if DEBUG:
             fp_list, fn_list = [], []

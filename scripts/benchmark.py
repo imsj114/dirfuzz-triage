@@ -147,7 +147,7 @@ def check_targeted_crash(targ, replay_buf):
     print("Unknown target: %s" % targ)
     exit(1)
 
-def check_targeted_crash_patched(targ, replay_orig, replay_patched):
+def check_targeted_crash_patch(targ, replay_orig, replay_patched):
     if check_all(replay_orig, ["stack-overflow"]) and check_all(replay_patched, ["stack-overflow"]):
         return False
     if get_crash_func(replay_orig) != get_crash_func(replay_patched):
