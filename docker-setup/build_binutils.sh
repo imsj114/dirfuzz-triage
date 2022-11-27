@@ -35,4 +35,4 @@ function build_patched() {
 }
 
 mkdir -p /benchmark/bin/patched
-build_patched "2016-4487 2016-4489 2016-4490 2016-4491 2016-4492 2016-6131"
+build_patched "2016-4487 2016-4489 2016-4490 2016-4491 2016-4492 2016-4492-old 2016-6131"
