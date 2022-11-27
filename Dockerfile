@@ -8,7 +8,7 @@ COPY patch/binutils-2.26 /benchmark/patch/binutils-2.26
 COPY docker-setup/build_binutils.sh /benchmark
 RUN ./build_binutils.sh
 # Build patched libming-4.7
-COPY patch/binutils-2.26 /benchmark/patch/binutils-2.26
+COPY patch/libming-4.7 /benchmark/patch/libming-4.7
 COPY docker-setup/build_libming.sh /benchmark
 RUN ./build_libming.sh
 
