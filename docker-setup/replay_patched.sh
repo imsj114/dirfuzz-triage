@@ -23,7 +23,7 @@ for TARG in $2; do
             
         elif [[ $4 == "file" ]]; then
             cp -f /crashes/$crash ./@@
-            timeout -k 30 15 $PATCHED $3 2>> /output/replay_log_patch_$TARG.txt
+            timeout -k 30 30 $PATCHED $3 2>> /output/replay_log_patch_$TARG.txt
         else
             echo "Invalid input source: $4"
             exit 1
